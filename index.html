@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRON Chain Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 添加一个好看的字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- 添加图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- 确保 monitor.css 最后加载 -->
+    <link rel="stylesheet" href="css/monitor.css">
+    <!-- 其他样式表 -->
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <span>TRON Explorer</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active">
+                    <i class="fas fa-key"></i>
+                    <span>钱包恢复</span>
+                </li>
+                <li>
+                    <i class="fas fa-wallet"></i>
+                    <span>钱包生成</span>
+                </li>
+                <li>
+                    <i class="fas fa-gem"></i>
+                    <span>靓号生成</span>
+                </li>
+                <li>
+                    <i class="fas fa-chart-line"></i>
+                    <span>区块浏览</span>
+                </li>
+                <li>
+                    <i class="fas fa-eye"></i>
+                    <span>钱包监控</span>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="addressInput" placeholder="搜索地址、交易、区块...">
+                    <button class="search-btn" onclick="getBalance()">查询</button>
+                </div>
+                <div class="network-status">
+                    <span class="status-dot"></span>
+                    主网
+                </div>
+            </header>
+
+            <div class="panel search-result-panel" style="display: none;">
+                <div class="panel-header">
+                    <h2><i class="fas fa-search"></i> 查询结果</h2>
+                </div>
+                <div id="result" class="search-result-content"></div>
+            </div>
+
+            <div class="content-area">
+                <!-- 钱包恢复面板 -->
+                <div class="panel wallet-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-key"></i> 钱包恢复</h2>
+                    </div>
+                    <div class="wallet-tools">
+                        <div class="input-group">
+                            <input type="text" id="keyInput" placeholder="输入私钥或助记词">
+                            <button onclick="recoverWallet()">恢复钱包</button>
+                        </div>
+                        <div class="input-tip">支持输入：64位十六进制私钥 或 12/24个单词助记词</div>
+                        <div id="recoverResult" class="result-container"></div>
+                    </div>
+                </div>
+
+                <!-- 钱包生成面板 -->
+                <div class="panel generate-wallet-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-wallet"></i> 钱包生成</h2>
+                    </div>
+                    <div class="wallet-generator">
+                        <div class="controls">
+                            <select id="mnemonicLength">
+                                <option value="12">12 个单词</option>
+                                <option value="24">24 个单词</option>
+                            </select>
+                            <button onclick="generateNewWallet()" class="generate-btn">
+                                <i class="fas fa-plus"></i>
+                                生成新钱包
+                            </button>
+                        </div>
+                        <div id="generatedWallet" class="generated-wallet-info"></div>
+                    </div>
+                </div>
+
+                <!-- 靓号生成面板 -->
+                <div class="panel mining-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-gem"></i> 靓号生成</h2>
+                    </div>
+                    <div class="mining-controls">
+                        <select id="pattern" class="pattern-select">
+                            <!-- 原有的选项 -->
+                        </select>
+                        <select id="caseSensitive">
+                            <option value="false">不区分大小写</option>
+                            <option value="true">完全匹配大小写</option>
+                        </select>
+                        <button id="miningBtn" onclick="startMining()" class="mining-btn">
+                            <i class="fas fa-play"></i>
+                            <span>开始挖矿</span>
+                        </button>
+                    </div>
+                    <div id="miningStatus" class="mining-status"></div>
+                    <div id="foundAddresses" class="found-addresses"></div>
+                </div>
+
+                <!-- 区块浏览面板 -->
+                <div class="panel blocks-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-cube"></i> 最新区块</h2>
+                        <div class="blocks-controls">
+                            <select id="blockCount" class="block-count-select">
+                                <option value="10">显示 10 条</option>
+                                <option value="20">显示 20 条</option>
+                                <option value="50">显示 50 条</option>
+                                <option value="100">显示 100 条</option>
+                            </select>
+                            <div class="refresh-timer">
+                                <i class="fas fa-sync-alt"></i>
+                                <span id="refreshCounter">3</span>s
+                            </div>
+                        </div>
+                    </div>
+                    <div id="blockInfo" class="blocks-container"></div>
+                    <div class="pagination">
+                        <button id="prevPage" class="page-btn" disabled>
+                            <i class="fas fa-chevron-left"></i> 上一页
+                        </button>
+                        <span id="pageInfo">第 1 页</span>
+                        <button id="nextPage" class="page-btn">
+                            下一页 <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 钱包监控面板 -->
+                <div class="panel wallet-monitor-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-eye"></i> 钱包监控</h2>
+                        <div class="panel-actions">
+                            <button id="refreshWalletsBtn" class="refresh-btn">
+                                <i class="fas fa-sync-alt"></i>
+                                刷新数据
+                            </button>
+                            <button id="addWalletBtn" class="monitor-btn">
+                                <i class="fas fa-plus"></i>
+                                添加钱包
+                            </button>
+                        </div>
+                    </div>
+                    <div class="monitor-content">
+                        <div id="monitoredWallets" class="wallet-cards"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 复制提示 -->
+    <div id="copyTip" class="copy-tip">
+        <i class="fas fa-check"></i>
+        已复制到剪贴板
+    </div>
+
+    <!-- 加载必要的库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bs58@5.0.0/dist/bs58.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tronweb@5.1.0/dist/TronWeb.js"></script>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+    <!-- 加载应用代码 -->
+    <script src="js/config.js"></script>
+    <script src="js/tron.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/mining.js"></script>
+    <script src="js/blocks.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/monitor.js"></script>
+
+    <!-- 添加钱包的模态框 -->
+    <div id="addWalletModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加监控钱包</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>钱包地址</label>
+                    <input type="text" id="walletAddress" placeholder="输入 TRON 钱包地址">
+                </div>
+                <div class="input-group">
+                    <label>备注名称</label>
+                    <input type="text" id="walletNote" placeholder="输入备注名称（可选）">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmAddWallet" class="primary-btn">确认添加</button>
+                <button class="cancel-btn close">取消</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
